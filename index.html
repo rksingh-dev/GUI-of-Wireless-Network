@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireless Network GUI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        #network-area {
+            width: 600px;
+            height: 400px;
+            border: none;
+            border-radius: 15px;
+            position: relative;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .base-station {
+            width: 24px;
+            height: 24px;
+            position: absolute;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ff4757, #ff6b81);
+            color: white;
+            box-shadow: 0 2px 5px rgba(255,0,0,0.3);
+        }
+
+        .user {
+            width: 24px;
+            height: 24px;
+            position: absolute;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #1e90ff, #4facfe);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,255,0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .user:hover {
+            transform: scale(1.1);
+        }
+
+        .user-label {
+            position: absolute;
+            background-color: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            display: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .connection {
+            position: absolute;
+            background: linear-gradient(90deg, rgba(52,152,219,0.6) 0%, rgba(231,76,60,0.6) 100%);
+            height: 2px;
+            transform-origin: 0 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Wireless Network GUI</h1>
+    <button onclick="addBaseStation()">Add Base Station</button>
+    <button onclick="addUser()">Add User</button>
+    <button onclick="clearNetwork()">Clear All</button>
+    <div id="network-area"></div>
+    
+    <script>
+        function getRandomPositionInPerimeter() {
+            let area = document.getElementById("network-area");
+            let w = area.clientWidth - 20;
+            let h = area.clientHeight - 20;
+            let perimeter = Math.floor(Math.random() * 4);
+            let x, y;
+            
+            switch (perimeter) {
+                case 0: x = Math.random() * w; y = 0; break; // Top edge
+                case 1: x = Math.random() * w; y = h; break; // Bottom edge
+                case 2: x = 0; y = Math.random() * h; break; // Left edge
+                case 3: x = w; y = Math.random() * h; break; // Right edge
+            }
+            return {x, y};
+        }
+        
+        function getRandomPosition() {
+            let area = document.getElementById("network-area");
+            let x = Math.random() * (area.clientWidth - 20);
+            let y = Math.random() * (area.clientHeight - 20);
+            return {x, y};
+        }
+        
+        function addBaseStation() {
+            let area = document.getElementById("network-area");
+            let pos = getRandomPositionInPerimeter();
+            let bs = document.createElement("div");
+            bs.className = "base-station";
+            bs.style.left = pos.x + "px";
+            bs.style.top = pos.y + "px";
+            bs.innerText = "BS";
+            area.appendChild(bs);
+        }
+        
+        function addUser() {
+            let area = document.getElementById("network-area");
+            let pos = getRandomPosition();
+            let user = document.createElement("div");
+            user.className = "user";
+            user.style.left = pos.x + "px";
+            user.style.top = pos.y + "px";
+            user.innerText = "U";
+            
+            let label = document.createElement("div");
+            label.className = "user-label";
+            label.innerText = `X: ${Math.round(pos.x)}, Y: ${Math.round(pos.y)}`;
+            label.style.left = (pos.x + 25) + "px";
+            label.style.top = (pos.y) + "px";
+            
+            user.addEventListener("click", function() {
+                label.style.display = "block";
+            });
+            
+            area.appendChild(user);
+            area.appendChild(label);
+            connectToNearestBaseStation(user, pos);
+        }
+        
+        function connectToNearestBaseStation(user, userPos) {
+            let baseStations = document.getElementsByClassName("base-station");
+            if (baseStations.length === 0) return;
+            
+            let nearestBS = null;
+            let minDistance = Infinity;
+            
+            for (let bs of baseStations) {
+                let bsPos = { x: parseFloat(bs.style.left), y: parseFloat(bs.style.top) };
+                let distance = Math.sqrt(Math.pow(userPos.x - bsPos.x, 2) + Math.pow(userPos.y - bsPos.y, 2));
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestBS = bs;
+                }
+            }
+            
+            if (nearestBS) {
+                let line = document.createElement("div");
+                line.className = "connection";
+                
+                let dx = parseFloat(nearestBS.style.left) - userPos.x;
+                let dy = parseFloat(nearestBS.style.top) - userPos.y;
+                let length = Math.sqrt(dx * dx + dy * dy);
+                let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                
+                line.style.width = length + "px";
+                line.style.left = userPos.x + "px";
+                line.style.top = userPos.y + "px";
+                line.style.transform = `rotate(${angle}deg)`;
+                
+                document.getElementById("network-area").appendChild(line);
+            }
+        }
+        
+        function clearNetwork() {
+            document.getElementById("network-area").innerHTML = "";
+        }
+    </script>
+</body>
+</html>
